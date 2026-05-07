@@ -1,0 +1,78 @@
+name: Build and publish
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: Build and check package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: 3.x}
+      - run: pip install build twine ruff setuptools
+      - run: ruff check .
+      - run: python -m build
+      - run: twine check dist/*
+      - uses: actions/upload-artifact@v7
+        with: {name: dist, path: dist/}
+
+  pypi:
+    if: github.ref_type == 'tag'
+    name: Upload to pypi.org
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with: {name: dist, path: dist/}
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  docker:
+    if: github.event_name == 'push'
+    name: Upload docker image
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with: {name: dist, path: dist/}
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - if: github.ref_type != 'tag'
+        name: Build and push nightly images
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            docker.io/ipprojects/certbot-dns-ipp:nightly
+            ghcr.io/ipp-gmbh/certbot-dns-ipp:nightly
+      - if: github.ref_type == 'tag'
+        name: Build and push release images
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            docker.io/ipprojects/certbot-dns-ipp:latest
+            docker.io/ipprojects/certbot-dns-ipp:${{ github.ref_name }}
+            ghcr.io/ipp-gmbh/certbot-dns-ipp:latest
+            ghcr.io/ipp-gmbh/certbot-dns-ipp:${{ github.ref_name }}
