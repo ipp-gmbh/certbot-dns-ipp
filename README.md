@@ -45,12 +45,14 @@ Certbot will emit a warning if it detects that the credentials file can be acces
 
 ## Usage
 
-| Commandline argument                      | Explanation                                                         |
-|-------------------------------------------|---------------------------------------------------------------------|
-| `--authenticator dns-ipp`                 | select the authenticator plugin (Required)                          |
-| `--dns-ipp-credentials "credentials.ini"` | credentials INI file containing the ip-projects api key. (Required) |
+| Commandline argument                          | Explanation                                                         |
+|-----------------------------------------------|---------------------------------------------------------------------|
+| `--authenticator dns-ipp`                     | select the authenticator plugin (Required)                          |
+| `--dns-ipp-credentials "ipp_credentials.ini"` | credentials INI file containing the ip-projects api key. (Required) |
 
 To acquire a single certificate for both `example.com` and `*.example.com`:
+
+### pip
 
 ```
 certbot certonly \
@@ -58,4 +60,17 @@ certbot certonly \
   --dns-ipp-credentials /etc/letsencrypt/ipp_credentials.ini \
   -d 'example.com' \
   -d '*.example.com'
+```
+
+### docker
+
+```
+docker run --rm --cap-drop=all \
+    -v /etc/letsencrypt:/etc/letsencrypt \
+    -v /var/lib/letsencrypt:/var/lib/letsencrypt \
+    ghcr.io/ipp-gmbh/certbot-dns-ipp:latest certbot \
+        --authenticator dns-ipp \
+        --dns-ipp-credentials "/etc/letsencrypt/ipp_credentials.ini" \
+        -d 'example.com' \
+        -d '*.example.com'
 ```
