@@ -1,4 +1,4 @@
-FROM certbot/certbot
+FROM certbot/certbot:v5.9.0
 
 COPY ./dist/certbot_dns_ipp-*.tar.gz /tmp/certbot_dns_ipp.tar.gz
 
