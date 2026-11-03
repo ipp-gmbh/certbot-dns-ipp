@@ -5,6 +5,7 @@ removing, TXT records using the IP-Projects API.
 """
 
 import logging
+
 import requests
 from certbot import errors
 from certbot.plugins.dns_common import DNSAuthenticator
@@ -77,6 +78,3 @@ class Authenticator(DNSAuthenticator):
 				raise errors.PluginError("invalid API key, or no access to domain")
 			else:
 				raise errors.PluginError(f"request error occurred. status: {response.status_code}")
-
-		except Exception as e:
-			raise errors.PluginError(f"Unexpected error: {e}")
